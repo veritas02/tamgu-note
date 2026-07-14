@@ -1,0 +1,865 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>탐구노트 · 학과·직업 오프라인 즉시검색</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-900:#131a2c;
+    --ink-850:#171f34;
+    --ink-800:#1f2a44;
+    --ink-700:#2b3757;
+    --parchment:#ede6d3;
+    --parchment-dim:#ddd2af;
+    --parchment-text:#2a2114;
+    --parchment-muted:#6b6250;
+    --brass:#c9a24b;
+    --brass-dim:#9c7d38;
+    --stamp-red:#a63a36;
+    --teal:#3e8e8a;
+    --teal-bright:#57b3ae;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #1c2744 0%, transparent 55%),
+      radial-gradient(ellipse at 90% 10%, #1a2440 0%, transparent 45%),
+      var(--ink-900);
+    color:var(--parchment);
+    font-family:'Noto Sans KR', sans-serif;
+    min-height:100vh;
+    line-height:1.6;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:56px 24px 96px;}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'Nanum Gothic Coding',monospace;
+    font-size:12.5px;letter-spacing:.14em;
+    color:var(--brass);
+    border:1px solid var(--brass-dim);
+    padding:5px 12px;border-radius:2px;
+    background:rgba(201,162,75,0.06);
+  }
+  .eyebrow::before{content:"§";font-size:14px;}
+  h1{
+    font-family:'Noto Serif KR', serif;
+    font-weight:900;
+    font-size:clamp(34px,5.4vw,56px);
+    line-height:1.16;
+    margin:22px 0 14px;
+    color:#f6f1e2;
+    letter-spacing:-0.01em;
+  }
+  h1 em{ font-style:normal; color:var(--teal-bright); }
+  .lede{ max-width:580px; color:#b9bfd1; font-size:16.5px; margin-bottom:44px; }
+  .lede b{ color:var(--brass); font-weight:700; }
+
+  .slip{
+    background:var(--parchment);
+    color:var(--parchment-text);
+    border-radius:3px;
+    padding:34px 34px 30px;
+    position:relative;
+    box-shadow:0 24px 60px -20px rgba(0,0,0,0.55), 0 2px 0 rgba(0,0,0,0.15);
+    border:1px solid #cabf9c;
+  }
+  .slip::before{
+    content:"";
+    position:absolute; left:0; top:22px; bottom:22px; width:3px;
+    background:repeating-linear-gradient(180deg, var(--stamp-red) 0 8px, transparent 8px 16px);
+    opacity:.55;
+  }
+  .slip-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    border-bottom:1px dashed #b8ab7f; padding-bottom:14px; margin-bottom:22px;
+  }
+  .slip-head .title{ font-family:'Noto Serif KR', serif; font-weight:700; font-size:19px; }
+  .slip-head .no{ font-family:'Nanum Gothic Coding',monospace; font-size:12px; color:var(--parchment-muted); }
+  label{
+    display:block; font-family:'Nanum Gothic Coding',monospace;
+    font-size:12px; letter-spacing:.06em; color:var(--parchment-muted);
+    margin-bottom:8px; text-transform:uppercase;
+  }
+  .field{margin-bottom:8px; position:relative;}
+  input[type=text]{
+    width:100%; font-family:'Noto Sans KR',sans-serif; font-size:16px;
+    background:#f7f2e4; border:1px solid #c3b790; border-radius:2px;
+    padding:12px 14px; color:var(--parchment-text);
+    outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  input[type=text]:focus{ border-color:var(--teal); box-shadow:0 0 0 3px rgba(62,142,138,0.18); }
+
+  .suggest-list{
+    list-style:none; margin:4px 0 0; padding:4px 0;
+    background:#f7f2e4; border:1px solid #c3b790; border-top:none;
+    border-radius:0 0 2px 2px; max-height:240px; overflow-y:auto;
+    position:absolute; left:0; right:0; z-index:20; display:none;
+    box-shadow:0 12px 24px -12px rgba(0,0,0,.4);
+  }
+  .suggest-list.active{display:block;}
+  .suggest-list li{
+    padding:9px 14px; cursor:pointer; font-size:14.5px; color:#4a4230;
+    display:flex; justify-content:space-between; gap:8px;
+  }
+  .suggest-list li:hover, .suggest-list li.hl{ background:#e8ddc0; }
+  .suggest-list li .match-tag{ font-family:'Nanum Gothic Coding',monospace; font-size:11px; color:var(--parchment-muted); }
+
+  .field-spacer{ height:26px; }
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 26px;}
+  .chip{
+    font-family:'Nanum Gothic Coding',monospace; font-size:12.5px;
+    padding:6px 12px; border-radius:20px; border:1px solid #c3b790;
+    background:#f7f2e4; color:#544c37; cursor:pointer;
+    transition:all .15s;
+  }
+  .chip:hover{border-color:var(--teal); color:var(--teal); background:#eef6f5;}
+
+  .submit-row{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  button.go{
+    font-family:'Noto Serif KR', serif; font-weight:700; font-size:16px;
+    background:var(--ink-900); color:var(--parchment);
+    border:none; border-radius:2px; padding:14px 26px;
+    cursor:pointer; letter-spacing:.02em;
+    transition:transform .12s, background .15s;
+  }
+  button.go:hover{background:var(--teal); transform:translateY(-1px);}
+  .hint{font-size:12.5px; color:var(--parchment-muted); font-family:'Nanum Gothic Coding',monospace;}
+
+  .error-box{
+    display:none; margin-top:16px; padding:16px 18px;
+    border:1px solid var(--stamp-red); border-radius:3px;
+    background:rgba(166,58,54,0.08); color:#f0b7b3;
+    font-size:14px;
+  }
+  .error-box.active{display:block;}
+  .error-box .try-chips{ margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; }
+  .error-box .try-chips span{
+    font-family:'Nanum Gothic Coding',monospace; font-size:12px;
+    padding:5px 10px; border:1px solid rgba(240,183,179,.5); border-radius:16px;
+    cursor:pointer; color:#f0b7b3;
+  }
+  .error-box .try-chips span:hover{ background:rgba(240,183,179,.12); }
+
+  #results{margin-top:52px; display:none;}
+  #results.active{display:block;}
+
+  .stamp-row{
+    display:flex; align-items:center; gap:22px; margin-bottom:44px;
+    opacity:0; transform:translateY(6px);
+  }
+  .stamp-row.show{ animation: stampIn .5s cubic-bezier(.2,.9,.3,1.3) forwards; }
+  @keyframes stampIn{
+    0%{opacity:0; transform:scale(1.4) rotate(-8deg) translateY(6px);}
+    60%{opacity:1;}
+    100%{opacity:1; transform:scale(1) rotate(-4deg) translateY(0);}
+  }
+  .stamp{
+    flex:0 0 auto;
+    width:96px; height:96px; border-radius:50%;
+    border:3px solid var(--stamp-red);
+    color:var(--stamp-red);
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; font-family:'Nanum Gothic Coding',monospace;
+    font-weight:700; font-size:13px; line-height:1.3;
+    transform:rotate(-4deg);
+    box-shadow:0 0 0 1px rgba(166,58,54,.15) inset;
+  }
+  .stamp-meta{font-family:'Nanum Gothic Coding',monospace; font-size:12.5px; color:#9aa1b8;}
+  .stamp-meta .q{color:var(--parchment); font-size:15px; font-family:'Noto Serif KR',serif; font-weight:700; margin-bottom:4px;}
+
+  h2.section-title{
+    font-family:'Noto Serif KR', serif; font-size:22px; color:#f6f1e2;
+    margin:0 0 22px; display:flex; align-items:center; gap:12px;
+  }
+  h2.section-title::after{content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--brass-dim), transparent);}
+
+  .case-file{
+    background:var(--parchment); color:var(--parchment-text);
+    border-radius:3px; padding:26px 28px; margin-bottom:18px;
+    border:1px solid #cabf9c; box-shadow:0 14px 30px -18px rgba(0,0,0,.5);
+    opacity:0; transform:translateY(10px);
+  }
+  .case-file.show{ animation: fileIn .5s ease forwards; }
+  @keyframes fileIn{ to{opacity:1; transform:translateY(0);} }
+  .case-file .tag{
+    font-family:'Nanum Gothic Coding',monospace; font-size:11.5px;
+    letter-spacing:.1em; color:var(--stamp-red); text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .case-file h3{ font-family:'Noto Serif KR',serif; font-size:19px; margin:0 0 10px; line-height:1.4; }
+  .case-file p{margin:0 0 12px; color:#4a4230; font-size:15px;}
+  .case-file .source{
+    font-family:'Nanum Gothic Coding',monospace; font-size:12px; color:var(--parchment-muted);
+    border-top:1px dashed #b8ab7f; padding-top:10px;
+  }
+
+  .keyword-grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+    gap:10px; margin-top:8px;
+  }
+  .kw{
+    background:var(--ink-800); border:1px solid var(--ink-700);
+    border-radius:2px; padding:10px 12px; cursor:pointer;
+    transition:border-color .15s, background .15s, transform .1s;
+    position:relative; overflow:hidden;
+  }
+  .kw:hover{border-color:var(--teal); background:#213347; transform:translateY(-1px);}
+  .kw .idx{ font-family:'Nanum Gothic Coding',monospace; font-size:10.5px; color:var(--brass); display:block; margin-bottom:4px; }
+  .kw .word{font-family:'Nanum Gothic Coding',monospace; font-size:14px; color:#eef1f8;}
+  .kw .copied{
+    position:absolute; inset:0; background:var(--teal); color:#0d1a19;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Nanum Gothic Coding',monospace; font-size:12px;
+    opacity:0; transition:opacity .15s;
+  }
+  .kw.copied-flash .copied{opacity:1;}
+  .source-badge{
+    display:inline-block; margin-left:8px; padding:2px 7px; border:1px solid #aa9d72;
+    border-radius:12px; font-family:'Nanum Gothic Coding',monospace; font-size:10px; color:#6b6250;
+  }
+  .official-link{color:#496d69;text-decoration:none;font-weight:700;}
+  .official-link:hover{text-decoration:underline;}
+
+  footer{
+    margin-top:64px; padding-top:22px; border-top:1px solid var(--ink-700);
+    font-family:'Nanum Gothic Coding',monospace; font-size:12px; color:#6b7387;
+  }
+
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow">고교 탐구보고서 주제 리서치 · 로그인 불필요</span>
+  <h1>관심 분야를 입력하면,<br><em>탐구노트</em>가 자료를 찾아드립니다.</h1>
+  <p class="lede">사전 정리된 <b>32개 심화 탐구자료</b>와 오프라인 분류 규칙을 이용해, 어떤 학과·직업을 입력해도 로그인이나 인증키 없이 탐구 주제와 관련 키워드를 바로 확인할 수 있습니다.</p>
+
+  <div class="slip">
+    <div class="slip-head">
+      <span class="title">열람 신청서</span>
+      <span class="no">FORM NO. RN-02</span>
+    </div>
+
+    <div class="field">
+      <label for="field-input">관심 학과 또는 직업</label>
+      <input type="text" id="field-input" placeholder="예: 컴퓨터공학과, 간호사, 심리학과, 환경공학" autocomplete="off">
+      <ul class="suggest-list" id="suggest-list"></ul>
+    </div>
+    <div class="field-spacer"></div>
+
+    <label>빠른 선택</label>
+    <div class="chips" id="chip-row"></div>
+
+    <div class="submit-row">
+      <button class="go" id="submit-btn">탐구주제 찾기</button>
+      <span class="hint" id="data-count-hint">오프라인 즉시 검색 · 인증키 불필요</span>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <div id="results">
+    <div class="stamp-row" id="stamp-row">
+      <div class="stamp">승인<br>APPROVED</div>
+      <div class="stamp-meta">
+        <div class="q" id="stamp-query">-</div>
+        <div id="stamp-date">-</div>
+      </div>
+    </div>
+
+    <h2 class="section-title">추천 탐구보고서 주제</h2>
+    <div id="topics"></div>
+
+    <h2 class="section-title" style="margin-top:44px;">관련 키워드 20</h2>
+    <div class="keyword-grid" id="keywords"></div>
+  </div>
+
+  <footer>
+    ※ 기본 32개 항목은 사전 정리된 자료입니다. 그 밖의 입력 결과는 학과·직업명과 분야별 키워드를 조합한 탐구 설계안이며 공식 통계나 최신 사실을 뜻하지 않습니다. 보고서 제출 전 최신 논문·뉴스·정책 원문을 직접 확인하세요.
+  </footer>
+</div>
+
+<script>
+/* ---------------- 데이터셋: 32개 학과/직업 ---------------- */
+const CURATED_DATA = [
+{name:"컴퓨터공학과", aliases:["소프트웨어학과","컴공","프로그래머","개발자","AI엔지니어","백엔드","프론트엔드"],
+ topics:[
+  {title:"생성형 AI 에이전트가 만드는 소프트웨어 개발 방식의 변화", summary:"AI가 코드를 직접 작성·배포하는 시대, 개발자 역할의 변화를 탐구", context:"생성형 AI가 멀티모달·에이전트형으로 빠르게 확장되는 산업 흐름"},
+  {title:"온디바이스 AI와 저전력 반도체 설계 트렌드", summary:"스마트폰·PC에 AI를 넣기 위한 경량화 기술을 탐구", context:"LPDDR 등 저전력 메모리 세대교체가 가속화되는 산업 동향"},
+  {title:"오픈소스 소프트웨어 생태계와 공급망 보안", summary:"오픈소스 확산에 따른 소프트웨어 공급망 보안 이슈를 분석", context:"오픈소스 주도 연구개발 가속화 동향"}
+ ],
+ keywords:["인공지능","머신러닝","딥러닝","알고리즘","클라우드컴퓨팅","오픈소스","자료구조","소프트웨어공학","사이버보안","반도체","온디바이스AI","생성형AI","에이전트AI","자연어처리","컴퓨터비전","분산시스템","프로그래밍언어","데이터베이스","API설계","임베디드시스템"]},
+
+{name:"전자공학과", aliases:["전기전자공학과","반도체학과","반도체공학"],
+ topics:[
+  {title:"AI 반도체 수요 급증과 차세대 메모리 기술", summary:"AI 서버·데이터센터용 고성능 메모리 개발 경쟁을 분석", context:"AI 지출 확대에 따른 반도체 시장의 AI 중심 재편"},
+  {title:"소프트웨어 정의 차량(SDV)과 차량용 반도체", summary:"자율주행 발전에 따른 차량 내 반도체 구조 변화를 탐구", context:"SDV 아키텍처 확산에 따른 차량용 칩 수요 증가"},
+  {title:"양자컴퓨팅 등 차세대 컴퓨팅 기술의 가능성", summary:"반도체를 넘어선 미래 컴퓨팅 패러다임을 탐색", context:"2030년 이후 유망기술로 꼽히는 양자컴퓨팅·BCI"}
+ ],
+ keywords:["반도체공정","AI가속기","HBM메모리","파운드리","팹리스","시스템반도체","회로설계","센서기술","전력전자","자율주행","소프트웨어정의차량","양자컴퓨팅","신호처리","통신공학","5G6G","임베디드시스템","웨이퍼공정","나노공정","스마트그리드","로보틱스"]},
+
+{name:"기계공학과", aliases:["기계공학","메카트로닉스학과"],
+ topics:[
+  {title:"로봇공학과 피지컬 AI의 산업 현장 적용", summary:"AI가 물리 세계와 상호작용하는 로봇 기술을 탐구", context:"피지컬 AI를 차세대 AI 패러다임으로 보는 산업 동향"},
+  {title:"전기차·수소차 시대의 동력 기술 전환", summary:"내연기관에서 전동화로 넘어가는 기계공학의 과제를 분석", context:"자동차 산업의 전동화·자율주행 전환 흐름"},
+  {title:"3D프린팅과 스마트 제조 기술", summary:"적층제조 기술이 바꾸는 생산 방식을 탐구", context:"AI 결합 스마트 제조 확산 동향"}
+ ],
+ keywords:["로봇공학","자동화","열역학","유체역학","재료역학","전동화","수소에너지","3D프린팅","스마트팩토리","센서융합","CAD설계","정밀기계","항공우주공학","협동로봇","배터리기술","자율주행차","진동제어","제어공학","메카트로닉스","신소재"]},
+
+{name:"화학공학과", aliases:["화공학과"],
+ topics:[
+  {title:"이차전지 소재 기술과 배터리 산업", summary:"전기차 확산에 따른 배터리 소재 개발 경쟁을 탐구", context:"전동화 가속에 따른 배터리 소재 수요 증가"},
+  {title:"친환경 화학 공정과 탄소포집 기술", summary:"탄소중립 목표 달성을 위한 화학공정 혁신을 분석", context:"탄소중립 정책 강화에 따른 친환경 공정 전환"},
+  {title:"바이오플라스틱과 지속가능 소재", summary:"석유 기반 플라스틱을 대체하는 소재 기술을 탐구", context:"그린바이오 산업의 바이오플라스틱 개발 확대"}
+ ],
+ keywords:["촉매공정","배터리소재","이차전지","탄소포집","바이오플라스틱","고분자공학","정밀화학","신재생에너지","수소생산","반응공학","나노소재","화학공정설계","친환경공정","CCUS","리사이클링","전해질","양극재음극재","그린케미스트리","공정최적화","에너지저장"]},
+
+{name:"신소재공학과", aliases:["재료공학과","금속공학과"],
+ topics:[
+  {title:"차세대 반도체용 신소재 개발", summary:"미세공정 한계를 넘는 신소재 연구 동향을 탐구", context:"첨단 패키징·공정 고도화에 따른 신소재 수요"},
+  {title:"탄소중립을 위한 친환경 소재 혁신", summary:"재활용·저탄소 소재 기술의 산업 적용을 분석", context:"디지털 제품여권 등 소재 관련 규제 강화 흐름"},
+  {title:"웨어러블 기기를 위한 유연소재 기술", summary:"신체 부착형 전자기기용 소재 개발을 탐구", context:"웨어러블-AI 융합 헬스케어 기기 확산"}
+ ],
+ keywords:["나노소재","반도체소재","이차전지소재","복합재료","세라믹소재","바이오소재","유연소재","초전도체","그래핀","신재생에너지소재","경량소재","스마트소재","소재분석","3D프린팅소재","반도체패키징","디스플레이소재","촉매소재","저탄소소재","웨어러블기기","재활용소재"]},
+
+{name:"건축학과", aliases:["건축공학과"],
+ topics:[
+  {title:"스마트시티와 도시 데이터 인프라", summary:"AI·IoT를 활용한 도시 설계의 변화를 탐구", context:"제조·스마트시티 등 산업 전반 AI 적용 확산"},
+  {title:"탄소중립 건축과 에너지 효율 규제", summary:"제로에너지 빌딩 설계 기준 강화 흐름을 분석", context:"에너지 효율 규제 강화에 따른 건축 기준 변화"},
+  {title:"모듈러 건축과 미래 주거 공간", summary:"공장 제작형 건축 기술의 확산을 탐구", context:"인구구조 변화에 따른 주거 형태 다변화"}
+ ],
+ keywords:["스마트시티","제로에너지빌딩","모듈러건축","도시재생","BIM설계","친환경건축","건축법규","공간디자인","지속가능건축","스마트홈","건축구조","방재설계","도시계획","리모델링","그린빌딩인증","디지털트윈","커뮤니티공간","유니버설디자인","건축자재","재생에너지건축"]},
+
+{name:"토목공학과", aliases:["건설환경공학과"],
+ topics:[
+  {title:"노후 인프라 유지관리와 디지털트윈 기술", summary:"AI 기반 시설물 안전 진단 기술을 탐구", context:"노후 사회기반시설 증가에 따른 유지보수 수요"},
+  {title:"기후위기 대응 방재·수자원 인프라", summary:"극한기후에 대응하는 토목 설계 기준을 분석", context:"기후위기 심화에 따른 방재 인프라 정책 강화"},
+  {title:"친환경 건설 소재와 저탄소 시공", summary:"콘크리트 산업의 탄소배출 저감 기술을 탐구", context:"건설업 탄소중립 전환 요구 증가"}
+ ],
+ keywords:["디지털트윈","인프라유지관리","방재공학","수자원공학","스마트건설","지반공학","교량설계","저탄소콘크리트","도시하천관리","재난안전","GIS","스마트시티인프라","건설자동화","구조안전진단","친환경시공","터널공학","상하수도","기후적응설계","드론측량","BIM"]},
+
+{name:"환경공학과", aliases:["환경과학과"],
+ topics:[
+  {title:"디지털 제품여권과 자원순환 정책", summary:"제품 전주기 탄소데이터 공개 의무화 흐름을 탐구", context:"EU 에코디자인 규정(ESPR) 등 자원순환 정책 강화"},
+  {title:"탄소중립 이행을 위한 온실가스 감축 기술", summary:"국가 온실가스 감축목표 달성을 위한 기술을 분석", context:"2035 NDC 이행을 위한 에너지대전환 정책 추진"},
+  {title:"미세플라스틱과 수질오염 관리 기술", summary:"생활 속 오염물질 저감을 위한 처리 기술을 탐구", context:"환경오염 물질 규제 강화에 따른 정화기술 수요"}
+ ],
+ keywords:["탄소중립","온실가스감축","자원순환","재생에너지","수질관리","대기오염관리","폐기물처리","환경영향평가","기후변화적응","ESG","미세플라스틱","생태복원","친환경정책","탄소포집저장","스마트그리드","순환경제","그린뉴딜","환경모니터링","탄소배출권","청정에너지기술"]},
+
+{name:"에너지공학과", aliases:["신재생에너지학과"],
+ topics:[
+  {title:"재생에너지 중심 에너지대전환 정책", summary:"국가 전력망 재편과 재생에너지 확대 흐름을 탐구", context:"정부의 재생에너지 중심 에너지대전환 정책 추진"},
+  {title:"차세대 배터리와 에너지저장시스템(ESS)", summary:"재생에너지 간헐성 해결을 위한 저장기술을 분석", context:"재생에너지 확대에 따른 에너지저장 수요 증가"},
+  {title:"소형모듈원전(SMR)과 원전 생태계", summary:"탄소중립 달성을 위한 원전 활용 논의를 탐구", context:"재생에너지·원전의 조화로운 전원구성 정책 방향"}
+ ],
+ keywords:["재생에너지","에너지저장시스템","스마트그리드","태양광발전","풍력발전","수소에너지","소형모듈원전","에너지전환정책","전력계통","탄소중립","배터리기술","에너지효율","분산에너지","전력시장","그린수소","에너지믹스","탄소배출권","마이크로그리드","전기요금정책","청정에너지기술"]},
+
+{name:"산업공학과", aliases:[],
+ topics:[
+  {title:"AI 기반 생산성 혁신과 스마트팩토리", summary:"AI를 노동 보완 도구로 활용하는 산업 현장 변화를 탐구", context:"AI를 생산성 강화 도구로 인식하는 산업계 흐름"},
+  {title:"공급망 리스크 관리와 데이터 기반 의사결정", summary:"지정학적 리스크 시대의 공급망 최적화를 분석", context:"반도체 등 산업 전반의 공급망 불확실성 심화"},
+  {title:"인간공학과 근로자 안전 데이터 분석", summary:"AI로 작업 안전을 예측하는 시스템을 탐구", context:"산업현장 안전 데이터 분석 기술 확산"}
+ ],
+ keywords:["스마트팩토리","공급망관리","데이터분석","생산관리","품질경영","인간공학","프로세스최적화","물류시스템","통계적품질관리","시뮬레이션","자동화시스템","경영과학","의사결정분석","리스크관리","ERP시스템","작업안전","6시그마","디지털트윈","수요예측","운영관리"]},
+
+{name:"생명과학과", aliases:["생명공학과","생명공학"],
+ topics:[
+  {title:"AI 기반 신약 개발과 단백질 구조 예측", summary:"딥러닝으로 신약 후보물질을 찾는 기술을 탐구", context:"AI 신약 개발 프로세스의 효율화·자동화 가속"},
+  {title:"유전자편집(CRISPR)과 맞춤형 정밀의료", summary:"개인 유전정보 기반 치료 기술의 발전을 분석", context:"CRISPR·mRNA를 넘어선 정밀의료 표준화 흐름"},
+  {title:"합성생물학과 그린바이오 산업", summary:"미생물을 활용한 친환경 소재·에너지 생산을 탐구", context:"그린·화이트바이오 시장의 급성장 동향"}
+ ],
+ keywords:["유전자편집","CRISPR","합성생물학","단백질구조예측","정밀의료","mRNA기술","신약개발","바이오인포매틱스","줄기세포","그린바이오","미생물공학","유전체분석","세포치료","바이오시밀러","오가노이드","생명윤리","마이크로바이옴","항체치료제","유전자치료","바이오플라스틱"]},
+
+{name:"화학과", aliases:[],
+ topics:[
+  {title:"차세대 배터리 소재 화학", summary:"전기차 시대를 여는 전해질·전극 소재 연구를 탐구", context:"이차전지 소재 개발 경쟁 심화"},
+  {title:"탄소포집·전환 촉매 기술", summary:"이산화탄소를 자원으로 바꾸는 화학 기술을 분석", context:"탄소중립 목표 달성을 위한 CCUS 기술 확대"},
+  {title:"AI를 활용한 신소재·신약 설계", summary:"화학 실험을 가속화하는 AI 모델링 기술을 탐구", context:"AI 기반 분자 설계 연구의 확산"}
+ ],
+ keywords:["촉매화학","유기화학","무기화학","물리화학","분석화학","고분자화학","전기화학","나노화학","탄소포집기술","배터리소재화학","친환경촉매","분자설계","신약화학","화학공정","그린케미스트리","재료합성","초분자화학","광화학","계산화학","화학분석기기"]},
+
+{name:"물리학과", aliases:[],
+ topics:[
+  {title:"양자컴퓨팅과 양자정보과학의 발전", summary:"차세대 컴퓨팅을 여는 양자기술 원리를 탐구", context:"2030년 이후 유망기술로 꼽히는 양자컴퓨팅"},
+  {title:"반도체 소자 물리와 미세공정의 한계", summary:"무어의 법칙 이후 반도체 물리학의 과제를 분석", context:"첨단 패키징 중심으로 재편되는 반도체 기술"},
+  {title:"천체물리학과 우주 관측 기술의 진보", summary:"새로운 관측장비가 밝히는 우주의 비밀을 탐구", context:"차세대 우주망원경·탐사 프로젝트 확대"}
+ ],
+ keywords:["양자역학","양자컴퓨팅","입자물리학","천체물리학","응집물질물리학","반도체물리","상대성이론","우주론","광학기술","초전도현상","플라즈마물리","통계물리학","나노물리학","중력파","양자정보","광자공학","물성연구","시뮬레이션물리","핵물리학","계측기술"]},
+
+{name:"수학과", aliases:["통계학과"],
+ topics:[
+  {title:"AI 모델을 뒷받침하는 수학적 원리", summary:"딥러닝 성능을 좌우하는 최적화 이론을 탐구", context:"생성형 AI 확산에 따른 기반 수학 연구의 중요성 증가"},
+  {title:"암호학과 양자내성암호 기술", summary:"양자컴퓨터 시대에 대비하는 보안 수학을 분석", context:"양자컴퓨팅 발전에 따른 기존 암호체계 위협"},
+  {title:"데이터 과학과 통계적 예측 모델", summary:"불확실성을 다루는 통계 기법의 활용을 탐구", context:"데이터 기반 의사결정 확산에 따른 통계 수요"}
+ ],
+ keywords:["선형대수","확률론","최적화이론","통계학","암호학","이산수학","미분방정식","그래프이론","수치해석","게임이론","데이터과학","양자내성암호","위상수학","정수론","알고리즘수학","인공지능수학","금융수학","통계적모델링","확률과정","수리통계"]},
+
+{name:"의예과", aliases:["의사","의대"],
+ topics:[
+  {title:"의료 AI 에이전트와 진단 보조 기술", summary:"AI가 의사의 진단을 돕는 임상 적용 사례를 탐구", context:"AMIE 등 대형 의료 AI 에이전트 개발 확대"},
+  {title:"유전체 기반 정밀의료의 확산", summary:"개인 맞춤형 치료를 위한 유전정보 활용을 분석", context:"게놈 의료와 AI 융합에 따른 개별화 의료 진전"},
+  {title:"고령화 사회와 만성질환 관리 시스템", summary:"웨어러블 기기를 활용한 예방 중심 의료를 탐구", context:"웨어러블-AI 융합 예후 예측 기술 확산"}
+ ],
+ keywords:["의료AI","정밀의료","유전체의학","원격의료","웨어러블헬스케어","의료영상진단","임상시험","의료데이터","감염병관리","만성질환관리","의료윤리","로봇수술","의료LLM","개인맞춤치료","예방의학","공중보건","노인의학","의료빅데이터","바이오마커","헬스케어정책"]},
+
+{name:"간호학과", aliases:["간호사"],
+ topics:[
+  {title:"AI 기반 환자 모니터링과 간호 업무 효율화", summary:"웨어러블 데이터를 활용한 환자 관리 기술을 탐구", context:"AI에 의한 의료기록 자동화·업무 효율화 확산"},
+  {title:"고령화 사회의 노인 돌봄 간호 모델", summary:"지역사회 기반 통합 돌봄 체계를 분석", context:"고령인구 급증에 따른 노인 의료·돌봄 수요 증가"},
+  {title:"정신건강 간호와 청년 마음건강 지원", summary:"청년층 정신건강 문제에 대한 간호 개입을 탐구", context:"청년 정신건강 문제에 대한 사회적 관심 증가"}
+ ],
+ keywords:["환자안전","간호정보학","만성질환간호","노인간호","정신간호","지역사회간호","웨어러블모니터링","감염관리","통합돌봄","재활간호","응급간호","완화의료","간호윤리","모성간호","아동간호","원격간호","의료AI협업","환자중심케어","근거기반간호","건강증진"]},
+
+{name:"약학과", aliases:["약사"],
+ topics:[
+  {title:"AI 신약 개발과 단백질 구조 예측 기술", summary:"신약 후보물질 탐색 기간을 단축하는 AI 기술을 탐구", context:"AI 기반 신약 개발 프로세스 효율화 가속"},
+  {title:"경구용 비만치료제(GLP-1)와 대사질환 치료 혁신", summary:"비만·대사질환 치료제 개발 경쟁을 분석", context:"경구용 GLP-1 치료제 등장으로 주목받는 시장"},
+  {title:"맞춤형 정밀의료와 약물유전체학", summary:"개인별 약물 반응 차이를 예측하는 기술을 탐구", context:"환자 맞춤형 정밀의료의 표준화 흐름"}
+ ],
+ keywords:["신약개발","약물유전체학","임상약리학","바이오의약품","mRNA플랫폼","약물전달시스템","정밀의료","약물상호작용","제네릭의약품","바이오시밀러","약물안전성","개인맞춤투약","의약품규제","약국약료서비스","항체치료제","세포유전자치료제","의약품유통","임상시험설계","AI신약설계","만성질환치료제"]},
+
+{name:"수의예과", aliases:["수의사","수의학과"],
+ topics:[
+  {title:"반려동물 헬스케어 산업의 성장", summary:"펫코노미 확산에 따른 동물병원 서비스 변화를 탐구", context:"반려동물 양육 인구 증가에 따른 수의 산업 성장"},
+  {title:"인수공통감염병과 원헬스(One Health) 전략", summary:"사람-동물-환경을 통합 관리하는 방역 체계를 분석", context:"신종 감염병 발생에 따른 원헬스 접근 강조"},
+  {title:"동물용 백신·의약품 개발 동향", summary:"가축 질병 예방을 위한 바이오 기술을 탐구", context:"축산업 방역 강화에 따른 동물의약품 수요 증가"}
+ ],
+ keywords:["수의공중보건","인수공통감염병","원헬스","반려동물헬스케어","동물백신개발","가축방역","야생동물보전","수의영상진단","동물복지","축산물안전","동물병원경영","수의외과","감염병역학","동물의약품","펫코노미","스마트축산","동물유전학","수생동물질병","실험동물학","동물행동학"]},
+
+{name:"치의예과", aliases:["치과의사","치대"],
+ topics:[
+  {title:"디지털 덴티스트리와 3D프린팅 보철 기술", summary:"구강 스캔·AI 진단을 활용한 치과 진료 변화를 탐구", context:"의료 전반의 디지털 전환·AI 진단 확산 흐름"},
+  {title:"고령화 사회와 임플란트·구강노화 관리", summary:"노년층 구강건강 관리 수요 증가를 분석", context:"고령화 심화에 따른 만성 구강질환 관리 필요성"},
+  {title:"구강미생물군과 전신질환의 연관성 연구", summary:"구강 건강이 전신 건강에 미치는 영향을 탐구", context:"마이크로바이옴 연구 확대에 따른 구강-전신 연계 관심"}
+ ],
+ keywords:["디지털덴티스트리","임플란트","구강스캐너","3D프린팅보철","예방치의학","치과AI진단","구강미생물군","심미치과","소아치과","치주질환관리","교정치의학","노인치의학","치과재료학","구강악안면외과","치과감염관리","디지털워크플로우","구강건강정책","치과보험제도","최소침습치료","치과빅데이터"]},
+
+{name:"경영학과", aliases:["경영대"],
+ topics:[
+  {title:"생성형 AI를 활용한 경영 의사결정", summary:"기업의 AI 도입 전략과 생산성 혁신 사례를 탐구", context:"AI를 생산성 강화 도구로 활용하는 기업 흐름"},
+  {title:"Z세대 마이크로 소비 트렌드와 마케팅 전략", summary:"가성비·취향 중심 소비를 겨냥한 마케팅을 분석", context:"Z세대의 마이크로 소비 트렌드 부상"},
+  {title:"ESG 경영과 지속가능한 기업 전략", summary:"환경·사회 책임을 반영한 경영 모델을 탐구", context:"탄소중립 규제 강화에 따른 ESG 경영 확대"}
+ ],
+ keywords:["경영전략","마케팅","ESG경영","생성형AI경영","브랜드관리","소비자행동","조직관리","재무관리","스타트업창업","디지털전환","공급망경영","인사관리","데이터기반의사결정","리더십","글로벌경영","고객경험관리","가치소비","플랫폼비즈니스","리스크관리","지속가능경영"]},
+
+{name:"경제학과", aliases:[],
+ topics:[
+  {title:"AI 산업 투자와 거시경제 파급효과", summary:"AI 인프라 투자 확대가 경제에 미치는 영향을 분석", context:"데이터센터 자본지출 확대가 이끄는 성장동력론"},
+  {title:"고령화와 노동시장 구조 변화", summary:"생산가능인구 감소에 따른 경제정책 과제를 탐구", context:"인구구조 변화에 따른 노동시장 재편 논의"},
+  {title:"탄소중립 정책의 산업별 경제효과", summary:"에너지 전환이 산업 경쟁력에 미치는 영향을 분석", context:"에너지 효율 규제 강화에 따른 산업 구조 변화"}
+ ],
+ keywords:["거시경제","미시경제","노동경제학","국제무역","통화정책","재정정책","행동경제학","산업조직론","경제성장이론","소득불평등","인구경제학","에너지경제학","디지털경제","금융시장","공급망경제","플랫폼경제","환경경제학","AI경제효과","지정학적리스크","경기변동"]},
+
+{name:"심리학과", aliases:[],
+ topics:[
+  {title:"청년층 정신건강 문제와 사회적 지원 방안", summary:"청년 심리·정서 문제의 원인과 대응 정책을 탐구", context:"청년 정신건강에 영향을 미치는 사회적 요인 연구 확대"},
+  {title:"AI 챗봇과 디지털 심리상담의 가능성", summary:"AI 기반 정서 지원 서비스의 효과와 한계를 분석", context:"AI 에이전트를 활용한 심리 지원 서비스 확산"},
+  {title:"소셜미디어 사용과 정서적 웰빙", summary:"온라인 활동이 자존감·불안에 미치는 영향을 탐구", context:"초개인화된 디지털 환경 속 정서 문제 증가"}
+ ],
+ keywords:["인지심리학","발달심리학","임상심리학","상담심리학","사회심리학","정신건강","스트레스관리","행동경제학","청년정신건강","디지털심리상담","정서조절","성격심리학","트라우마치료","웰빙심리학","학습심리학","심리검사","마음챙김","소셜미디어심리","번아웃","자기효능감"]},
+
+{name:"사회복지학과", aliases:["사회복지사"],
+ topics:[
+  {title:"고령화 사회의 노인 복지 정책 설계", summary:"지역사회 기반 통합 돌봄 체계 구축 방안을 탐구", context:"고령인구 급증에 따른 복지 수요 확대"},
+  {title:"청년 정신건강 지원과 복지 사각지대", summary:"복지 서비스에서 소외되는 청년층 문제를 분석", context:"청년 심리·정서 문제 대응 정책 필요성 증가"},
+  {title:"AI를 활용한 복지 사각지대 발굴", summary:"데이터 기반으로 위기가구를 찾는 기술을 탐구", context:"공공데이터 활용 복지행정 디지털 전환 흐름"}
+ ],
+ keywords:["사회복지정책","노인복지","아동복지","장애인복지","지역사회복지","복지사각지대","통합돌봄","사례관리","사회보장제도","위기가구지원","복지행정","정신건강복지","다문화복지","자활지원","공공부조","사회적경제","복지데이터","가족복지","청년복지정책","재가복지서비스"]},
+
+{name:"정치외교학과", aliases:[],
+ topics:[
+  {title:"AI 패권경쟁과 미중 기술 갈등", summary:"국가 간 AI 기술 경쟁이 외교에 미치는 영향을 탐구", context:"미국·중국 중심 AI 투자 경쟁 심화"},
+  {title:"기후변화와 국제 에너지 안보 갈등", summary:"탄소중립 정책을 둘러싼 국가 간 이해관계를 분석", context:"에너지 독립 의지 강화에 따른 정책 지속성 논의"},
+  {title:"공급망 재편과 지정학적 리스크", summary:"반도체 등 전략물자를 둘러싼 국제관계를 탐구", context:"지정학적 리스크에 따른 공급망 불확실성 심화"}
+ ],
+ keywords:["국제관계","외교정책","지정학","안보전략","국제기구","기후외교","통상정책","공급망안보","AI패권경쟁","에너지안보","국제분쟁","다자외교","경제안보","인권외교","사이버안보","동북아정세","국제법","국제질서변화","초국가협력","국가전략"]},
+
+{name:"행정학과", aliases:["공무원"],
+ topics:[
+  {title:"AI를 활용한 공공서비스 디지털 전환", summary:"행정 데이터를 활용한 정책 효율화 사례를 탐구", context:"공공부문 AI 도입 확대에 따른 행정 변화"},
+  {title:"탄소중립 이행을 위한 정부 정책 설계", summary:"국가 온실가스 감축목표 이행 체계를 분석", context:"에너지대전환 정책 추진을 위한 행정 조직 개편"},
+  {title:"지방소멸 대응과 지역균형발전 정책", summary:"인구감소 지역의 행정 서비스 유지 방안을 탐구", context:"인구구조 변화에 따른 지역행정 과제 증가"}
+ ],
+ keywords:["공공정책","행정조직","지방자치","정책평가","전자정부","공공데이터","지역균형발전","재난안전행정","규제정책","공공서비스혁신","예산행정","인사행정","거버넌스","정책결정과정","디지털행정","지방소멸대응","환경행정","복지행정","공직윤리","시민참여행정"]},
+
+{name:"국어국문학과", aliases:["문예창작과"],
+ topics:[
+  {title:"생성형 AI 시대의 한국어 창작과 저작권", summary:"AI 글쓰기 도구가 문학 창작에 미치는 영향을 탐구", context:"생성형 AI 확산에 따른 창작 윤리 논의 증가"},
+  {title:"디지털 매체 속 한국어의 변화", summary:"온라인 신조어와 언어 파괴 현상을 분석", context:"SNS·플랫폼 중심 언어생활 변화"},
+  {title:"지역어(방언) 소멸과 언어 다양성 보존", summary:"사라져가는 방언을 기록·보존하는 연구를 탐구", context:"언어문화유산 보존을 위한 디지털 아카이빙 확대"}
+ ],
+ keywords:["한국어문법","국문학사","현대문학","고전문학","방언학","언어학","문학비평","생성형AI창작","디지털인문학","저작권","텍스트마이닝","스토리텔링","언어정책","한글맞춤법","문화콘텐츠","구비문학","언어변화","표준어정책","창작윤리","문예창작"]},
+
+{name:"영어영문학과", aliases:["영문과"],
+ topics:[
+  {title:"AI 번역 기술의 발전과 언어 산업의 변화", summary:"생성형 AI 번역이 통번역 직업에 미치는 영향을 탐구", context:"멀티모달 AI 확산에 따른 언어 서비스 자동화"},
+  {title:"영미문학 속 기술사회 담론 분석", summary:"SF문학이 그리는 AI 사회의 모습을 탐구", context:"AI 기술 확산에 따른 대중문화 속 담론 변화"},
+  {title:"글로벌 콘텐츠 시장과 영어권 미디어 전략", summary:"K-콘텐츠의 해외 진출과 언어 현지화를 분석", context:"K-컬처의 실물경제 파급 효과 확대"}
+ ],
+ keywords:["영미문학","영어교육","번역학","통번역","언어학","비교문학","영어권문화","글로벌콘텐츠","현지화전략","AI번역기술","크리티컬리딩","영미소설","영시분석","다문화커뮤니케이션","영어권미디어","영어작문","세계영어","언어습득","문화연구","크로스컬처마케팅"]},
+
+{name:"사학과", aliases:["역사학과"],
+ topics:[
+  {title:"디지털 아카이브와 역사자료 데이터베이스", summary:"AI를 활용한 고문헌 판독·복원 기술을 탐구", context:"디지털 인문학 확산에 따른 역사자료 디지털화"},
+  {title:"기후위기의 역사적 기원과 환경사 연구", summary:"산업화 이후 환경 변화의 역사적 흐름을 분석", context:"기후위기 대응 정책 논의 확대"},
+  {title:"냉전 이후 국제질서 변화와 현대사 재해석", summary:"지정학적 갈등의 역사적 배경을 탐구", context:"미중 패권경쟁 심화에 따른 현대사 재조명"}
+ ],
+ keywords:["한국사","세계사","역사학방법론","디지털인문학","환경사","사료비판","구술사","역사교육","고문헌학","냉전사","근현대사","문화사","역사아카이브","지역사연구","역사지리","사회사","사상사","역사복원기술","기록관리학","역사자료데이터베이스"]},
+
+{name:"미디어커뮤니케이션학과", aliases:["신문방송학과","기자","PD"],
+ topics:[
+  {title:"생성형 AI와 콘텐츠 제작 산업의 변화", summary:"AI가 영상·기사 제작에 도입되는 방식을 탐구", context:"생성형 AI의 산업·과학 전반 재편 흐름"},
+  {title:"K-콘텐츠의 글로벌 확산과 감정 경제", summary:"K-컬처가 실물경제로 이어지는 현상을 분석", context:"K-컬처 자부심이 전시·공연 등 실물경제로 확장"},
+  {title:"허위정보 확산과 미디어 리터러시", summary:"AI 생성 콘텐츠 시대의 정보 신뢰 문제를 탐구", context:"생성형 AI 확산에 따른 딥페이크·허위정보 우려 증가"}
+ ],
+ keywords:["저널리즘","콘텐츠기획","미디어리터러시","디지털미디어","소셜미디어전략","영상제작","광고홍보","PR전략","데이터저널리즘","생성형AI콘텐츠","K콘텐츠","플랫폼미디어","허위정보대응","브랜드커뮤니케이션","크로스미디어","1인미디어","미디어윤리","콘텐츠큐레이션","스토리텔링","팬덤문화"]},
+
+{name:"교육학과", aliases:["초등교육과","교사"],
+ topics:[
+  {title:"생성형 AI를 활용한 맞춤형 교육 혁신", summary:"AI 튜터가 학생 개별 학습을 지원하는 방식을 탐구", context:"생성형 AI의 교육 현장 도입 확산"},
+  {title:"디지털 리터러시 교육과 AI 윤리 교육", summary:"AI 시대 학생에게 필요한 역량 재정의를 분석", context:"AI 사회 진입에 따른 교육과정 개편 논의"},
+  {title:"학령인구 감소와 지역 교육격차", summary:"인구절벽 시대 학교 통폐합 문제를 탐구", context:"저출생에 따른 학령인구 급감 현상"}
+ ],
+ keywords:["교육공학","맞춤형학습","AI튜터","디지털리터러시","교육과정","학습분석","교육심리학","평생교육","특수교육","다문화교육","학령인구감소","교육격차","미래교육역량","창의교육","진로교육","교사교육","에듀테크","자기주도학습","인성교육","AI윤리교육"]},
+
+{name:"법학과", aliases:["변호사","로스쿨"],
+ topics:[
+  {title:"생성형 AI와 저작권·데이터 법적 쟁점", summary:"AI 학습데이터 사용을 둘러싼 법적 분쟁을 탐구", context:"생성형 AI 확산에 따른 저작권 분쟁 증가"},
+  {title:"AI 의료·자율주행의 법적 책임 문제", summary:"AI 오작동 시 책임소재를 정하는 법리를 분석", context:"의료·자율주행 AI 도입 확대에 따른 규제 공백 논의"},
+  {title:"탄소중립 관련 환경규제와 기업의 법적 대응", summary:"디지털 제품여권 등 신규 환경규제 대응을 탐구", context:"EU發 환경 규제(ESPR) 등 글로벌 규제 강화"}
+ ],
+ keywords:["AI법제","데이터법","저작권법","개인정보보호법","환경법","노동법","헌법","형사법","국제법","지식재산권","플랫폼규제","자율주행법적책임","의료법","소비자보호법","공정거래법","디지털증거","규제샌드박스","ESG법제","사이버범죄법","계약법"]},
+
+{name:"데이터사이언스학과", aliases:["AI융합학과","데이터사이언티스트"],
+ topics:[
+  {title:"거대언어모델(LLM) 이후의 AI 연구 방향", summary:"멀티모달·에이전트형 AI로의 진화 흐름을 탐구", context:"생성형 AI가 산업·과학의 지배 인프라로 재편되는 흐름"},
+  {title:"데이터 프라이버시와 AI 거버넌스", summary:"AI 학습데이터 활용의 윤리적 기준 마련을 분석", context:"AI 가이드라인·사회적 수용성 논의 확대"},
+  {title:"산업별 AI 도입 성과와 생산성 지표 분석", summary:"AI 투자 대비 실제 생산성 향상 여부를 탐구", context:"기업 다수가 AI 투자를 확대하는 산업 동향"}
+ ],
+ keywords:["머신러닝","딥러닝","빅데이터분석","데이터시각화","자연어처리","컴퓨터비전","데이터마이닝","AI거버넌스","데이터프라이버시","멀티모달AI","에이전트AI","데이터엔지니어링","통계모델링","클라우드데이터플랫폼","AI윤리","예측모델링","데이터파이프라인","MLOps","파운데이션모델","산업AI적용"]}
+];
+
+
+/* ---------------- 오프라인 학과·직업 목록 및 자동 탐구 설계 ---------------- */
+const EXTERNAL_DATA = [];
+
+
+const MAJOR_NAMES = ["가정교육과", "간호학과", "건축공학과", "건축학과", "경영정보학과", "경영학과", "경제학과", "경찰행정학과", "고고학과", "고분자공학과", "공공인재학부", "관광경영학과", "광고홍보학과", "교육공학과", "교육학과", "국어교육과", "국어국문학과", "국제관계학과", "국제통상학과", "금속공학과", "금융학과", "기계공학과", "기계설계공학과", "기독교학과", "나노공학과", "노어노문학과", "농경제학과", "농업교육과", "대기과학과", "도시공학과", "도시계획학과", "독어독문학과", "동물생명공학과", "동물자원학과", "디자인학과", "디지털콘텐츠학과", "러시아학과", "레저스포츠학과", "로봇공학과", "무역학과", "문예창작과", "문화재보존학과", "문화콘텐츠학과", "물리교육과", "물리치료학과", "물리학과", "미디어커뮤니케이션학과", "미술교육과", "미술학과", "바이오공학과", "반도체공학과", "법학과", "보건관리학과", "보건행정학과", "불어불문학과", "사학과", "산림자원학과", "산업공학과", "산업디자인학과", "사회교육과", "사회복지학과", "사회학과", "생명공학과", "생명과학과", "생물교육과", "세무회계학과", "소방방재학과", "소프트웨어학과", "수산생명의학과", "수의예과", "수학과", "수학교육과", "스마트팜학과", "스포츠과학과", "식품공학과", "식품영양학과", "신문방송학과", "신소재공학과", "심리학과", "아동학과", "안전공학과", "약학과", "언론정보학과", "언어치료학과", "에너지공학과", "연극영화학과", "영어교육과", "영어영문학과", "예술경영학과", "외식경영학과", "원예학과", "유아교육과", "윤리교육과", "응급구조학과", "의공학과", "의류학과", "의예과", "인공지능학과", "일본어학과", "임상병리학과", "자동차공학과", "자율주행공학과", "재료공학과", "전기공학과", "전자공학과", "정보보호학과", "정보통신공학과", "정치외교학과", "제약공학과", "조경학과", "조선해양공학과", "중어중문학과", "지구과학교육과", "지구환경과학과", "지리교육과", "지리학과", "철도공학과", "철학과", "체육교육과", "치기공학과", "치위생학과", "치의예과", "컴퓨터공학과", "통계학과", "특수교육과", "패션디자인학과", "항공경영학과", "항공서비스학과", "항공우주공학과", "항해학과", "행정학과", "호텔경영학과", "화학공학과", "화학교육과", "화학과", "환경공학과", "회계학과"];
+const JOB_NAMES = ["간호사", "간호조무사", "감정평가사", "건축가", "건축구조기술자", "게임기획자", "게임프로그래머", "경영컨설턴트", "경찰관", "공무원", "공인노무사", "공인회계사", "관광통역안내사", "광고기획자", "교도관", "교사", "교수", "국제기구종사자", "기계공학기술자", "기상연구원", "기자", "데이터분석가", "데이터사이언티스트", "도시계획가", "동물사육사", "드론조종사", "디지털마케터", "로봇공학자", "마케팅전문가", "만화가", "메이크업아티스트", "무대감독", "물리치료사", "미술치료사", "바리스타", "반도체공정기술자", "방사선사", "법무사", "변리사", "변호사", "보건교사", "보육교사", "사서", "사회복지사", "산업안전원", "상담심리사", "생명과학연구원", "세무사", "소방관", "소프트웨어개발자", "수의사", "스포츠지도사", "시각디자이너", "식품공학기술자", "식품영양사", "신약개발연구원", "심리상담사", "아나운서", "애니메이터", "약사", "언어재활사", "영상편집자", "영양사", "외교관", "웹디자이너", "웹툰작가", "유치원교사", "응급구조사", "의사", "인공지능전문가", "인테리어디자이너", "임상병리사", "작가", "재활치료사", "전기공학기술자", "전자공학기술자", "정보보안전문가", "정신건강사회복지사", "제품디자이너", "조경가", "조리사", "직업상담사", "치과기공사", "치과위생사", "치과의사", "컴퓨터그래픽디자이너", "콘텐츠기획자", "통번역가", "패션디자이너", "항공교통관제사", "항공기조종사", "항공정비사", "행정사", "호텔리어", "화학연구원", "환경공학기술자", "환경영향평가원", "환경컨설턴트", "환경연구원", "회계사", "UX디자이너", "UI디자이너", "PD", "프로듀서", "촬영감독", "음향엔지니어", "작곡가", "연주자", "배우", "공연기획자", "큐레이터", "문화재보존원", "학예사", "농업기술자", "스마트팜전문가", "산림치유지도사", "수산질병관리사", "해양연구원", "선박기관사", "철도기관사", "물류관리사", "유통관리사", "품질관리기술자", "생산관리자", "특허정보분석가", "사회조사분석사", "시장조사전문가", "금융분석가", "보험계리사", "투자분석가", "은행원", "재무관리자", "세일즈매니저", "고객경험전문가", "여행상품개발자", "호텔관리자", "항공승무원", "반려동물행동교정사", "동물보건사", "동물훈련사", "스포츠심리상담사", "운동처방사", "생활스포츠지도사", "프로게이머", "e스포츠기획자", "정보교사", "특수교사", "진로진학상담교사", "청소년상담사", "평생교육사", "교육콘텐츠개발자", "에듀테크기획자", "법의학자", "검사", "판사", "법원직공무원", "교정직공무원", "군인", "해양경찰관", "재난안전전문가", "산업위생관리기사", "소방시설설계자", "원자력공학기술자", "에너지관리전문가", "배터리연구원", "신소재연구원", "반도체설계엔지니어", "통신엔지니어", "네트워크엔지니어", "클라우드엔지니어", "백엔드개발자", "프론트엔드개발자", "앱개발자", "게임그래픽디자이너", "가상현실전문가", "블록체인개발자", "빅데이터전문가", "머신러닝엔지니어", "자율주행엔지니어", "로봇제어엔지니어", "건설안전기술자", "토목기술자", "측량사", "BIM전문가", "도시재생전문가", "수질환경기술자", "대기환경기술자", "폐기물처리기술자", "탄소배출권전문가", "기후변화전문가", "생태복원전문가", "임상심리사", "정신건강간호사", "작업치료사", "의료기기개발자", "보건의료정보관리사", "병원행정사", "제약연구원", "바이오인포매틱스전문가", "유전상담사"];
+
+const PROFILE_RULES = [
+  {id:'software', label:'컴퓨터·AI·데이터', terms:['컴퓨터','소프트웨어','인공지능','ai','데이터','빅데이터','프로그래머','개발자','정보보호','보안','클라우드','게임','블록체인','가상현실','앱','웹'], keywords:['인공지능','데이터분석','알고리즘','소프트웨어개발','프로그래밍','클라우드컴퓨팅','사이버보안','데이터베이스','사용자경험','디지털전환','자동화','오픈소스','개인정보보호','AI윤리','컴퓨터비전','자연어처리','MLOps','플랫폼','디지털접근성','기술혁신'], focus:['생성형 AI와 자동화','데이터 보호와 알고리즘 윤리','미래 개발 역량과 디지털 격차']},
+  {id:'electronics', label:'전기·전자·반도체·통신', terms:['전자','전기','반도체','통신','회로','배터리','디스플레이','나노','임베디드'], keywords:['반도체','회로설계','센서','전력전자','통신기술','6G','임베디드시스템','스마트그리드','배터리','전기차','AI반도체','신호처리','나노공정','전력효율','자율주행','로봇','전자소자','에너지저장','기술안전','공급망'], focus:['AI 반도체와 고효율 전자기술','에너지 효율·공급망·전자폐기물','차세대 통신과 지능형 기기']},
+  {id:'mechanical', label:'기계·로봇·자동차·항공', terms:['기계','로봇','자동차','항공우주','항공정비','조선','메카트로닉스','자율주행','드론','철도'], keywords:['로봇공학','자동화','스마트팩토리','자율주행','전동화','수소에너지','3D프린팅','열역학','유체역학','제어공학','센서융합','CAD','디지털트윈','정밀기계','협동로봇','항공안전','모빌리티','경량소재','예지정비','인간공학'], focus:['피지컬 AI와 자동화','친환경 모빌리티와 안전 설계','스마트 제조와 미래 기술자 역량']},
+  {id:'chemical', label:'화학·재료·에너지', terms:['화학','화공','신소재','재료','고분자','금속','에너지','배터리','제약공학'], keywords:['촉매','신소재','이차전지','탄소포집','친환경공정','고분자','나노소재','전해질','재활용소재','수소생산','공정안전','그린케미스트리','재생에너지','소재분석','바이오플라스틱','반도체소재','에너지저장','순환경제','저탄소기술','공급망'], focus:['저탄소 소재와 친환경 공정','배터리·수소·에너지저장 기술','소재 안전성과 순환경제']},
+  {id:'architecture', label:'건축·도시·토목·조경', terms:['건축','토목','도시','조경','건설','측량','bim','인테리어'], keywords:['스마트시티','BIM','도시재생','친환경건축','제로에너지건축','모듈러건축','유니버설디자인','재난안전','디지털트윈','공간디자인','교통계획','기후적응','인프라관리','건축법규','공공공간','저탄소콘크리트','드론측량','지역균형','주거복지','스마트건설'], focus:['스마트시티와 디지털 설계','기후위기 대응형 공간과 안전','지역사회·주거·공공성']},
+  {id:'environment', label:'환경·기후·생태', terms:['환경','생태','기후','산림','대기','수질','폐기물','자원순환','탄소','해양연구'], keywords:['탄소중립','기후변화','자원순환','대기오염','수질관리','폐기물처리','환경영향평가','생태복원','재생에너지','탄소배출권','순환경제','미세플라스틱','환경정책','환경모니터링','생물다양성','기후적응','ESG','환경보건','청정기술','시민참여'], focus:['탄소중립과 기후위기 대응','오염 관리와 자원순환','생물다양성과 환경정의']},
+  {id:'bio', label:'생명·바이오·농림수산', terms:['생명','바이오','유전','미생물','농업','원예','산림','수산','동물자원','스마트팜','식품공학'], keywords:['유전자편집','합성생물학','정밀농업','스마트팜','생물다양성','미생물','바이오인포매틱스','단백질구조','기후적응농업','식량안보','동물복지','그린바이오','바이오소재','종자기술','농업데이터','수산자원','생명윤리','마이크로바이옴','대체식품','지속가능농업'], focus:['AI·유전체 기반 생명과학','기후위기와 식량·생태 문제','생명윤리와 지속가능한 바이오산업']},
+  {id:'health', label:'의료·보건·재활', terms:['의사','의예','간호','약사','약학','치과','치의','치위생','치기공','물리치료','작업치료','임상병리','방사선','응급구조','보건','의공','의료','재활','언어치료','영양사'], keywords:['의료AI','환자안전','정밀의료','예방의학','건강형평성','고령화','지역사회보건','의료윤리','웨어러블헬스케어','감염관리','만성질환','재활기술','의료데이터','원격의료','통합돌봄','보건정책','의료기기','근거기반실무','건강증진','디지털헬스'], focus:['의료 AI와 환자 중심 서비스','고령화·만성질환·지역사회 돌봄','의료윤리와 건강 격차']},
+  {id:'psych', label:'심리·복지·아동', terms:['심리','상담','사회복지','아동','청소년','정신건강','미술치료','직업상담'], keywords:['정신건강','상담심리','발달심리','정서조절','사회복지정책','통합돌봄','복지사각지대','아동복지','청소년상담','자기효능감','스트레스','회복탄력성','디지털상담','사회적지지','사례관리','다문화복지','가족복지','심리검사','인권','지역사회복지'], focus:['디지털 환경과 정신건강','복지 사각지대와 사회적 지원','정서조절·관계·회복탄력성']},
+  {id:'education', label:'교육·교사·에듀테크', terms:['교육','교사','유치원','보육','특수교사','평생교육','에듀테크','교육콘텐츠','진로진학'], keywords:['맞춤형학습','AI튜터','교육격차','교육과정','학습동기','교육심리','디지털리터러시','특수교육','다문화교육','평생교육','자기주도학습','교사전문성','에듀테크','학습분석','진로교육','인성교육','교육복지','포용교육','AI윤리교육','평가혁신'], focus:['생성형 AI와 맞춤형 학습','교육격차와 포용적 교육','교사 역할과 미래 학습 역량']},
+  {id:'business', label:'경영·경제·금융·회계·무역', terms:['경영','경제','금융','회계','세무','무역','마케팅','컨설턴트','은행','투자','보험','유통','물류','품질관리','생산관리'], keywords:['경영전략','마케팅','소비자행동','금융시장','회계정보','ESG경영','공급망관리','디지털전환','데이터기반의사결정','플랫폼경제','리스크관리','글로벌경영','조직관리','핀테크','지속가능경영','브랜드관리','스타트업','경제정책','무역환경','고객경험'], focus:['AI와 데이터 기반 의사결정','ESG·공급망·글로벌 시장 변화','소비자 행동과 미래 비즈니스 모델']},
+  {id:'public', label:'법·행정·정치·안전', terms:['법학','변호사','판사','검사','법무사','행정','공무원','정치','외교','경찰','소방','교도','군인','재난','안전','해양경찰'], keywords:['공공정책','법적책임','인권','행정서비스','전자정부','재난안전','범죄예방','국제관계','경제안보','기후정책','개인정보보호','규제정책','지역균형','공직윤리','사이버안보','시민참여','갈등조정','공공데이터','사회적약자','국제협력'], focus:['AI·데이터와 공공서비스 변화','안전·인권·법적 책임','사회갈등과 정책적 해결 방안']},
+  {id:'humanities', label:'언어·문학·역사·철학', terms:['국어','영어','일본어','중어','독어','불어','러시아','노어','문학','사학','역사','철학','고고','통번역','작가'], keywords:['디지털인문학','언어변화','문학비평','문화다양성','번역','스토리텔링','역사자료','기록문화','AI창작','저작권','텍스트마이닝','지역문화','문화유산','세계문학','담론분석','윤리학','구술사','언어정책','인문학적사고','콘텐츠해석'], focus:['생성형 AI와 언어·창작 변화','문화유산·기억·정체성','디지털 시대의 인문학적 해석']},
+  {id:'media', label:'미디어·콘텐츠·디자인·예술', terms:['미디어','신문방송','언론','광고','홍보','콘텐츠','디자인','패션','미술','음악','연극','영화','배우','작곡','큐레이터','애니메이터','웹툰','영상','pd','프로듀서','촬영','음향','공연'], keywords:['생성형AI콘텐츠','미디어리터러시','저작권','디지털콘텐츠','스토리텔링','사용자경험','시각문화','브랜드커뮤니케이션','K콘텐츠','플랫폼미디어','허위정보','딥페이크','문화산업','콘텐츠기획','접근성디자인','팬덤문화','예술경영','창작윤리','가상현실','공공디자인'], focus:['생성형 AI와 창작·저작권','플랫폼 미디어와 정보 신뢰','문화다양성·접근성·콘텐츠 산업']},
+  {id:'sports', label:'체육·스포츠·레저', terms:['체육','스포츠','운동','레저','프로게이머','e스포츠'], keywords:['스포츠과학','운동생리학','스포츠심리','건강증진','데이터분석','웨어러블기기','스포츠산업','생활체육','운동처방','재활운동','선수안전','도핑윤리','e스포츠','스포츠마케팅','체육교육','고령자운동','장애인체육','경기력분석','스포츠정책','지역체육'], focus:['데이터·웨어러블과 경기력 분석','스포츠 참여와 건강 형평성','선수 안전·윤리·스포츠 산업']},
+  {id:'service', label:'관광·호텔·외식·뷰티·서비스', terms:['관광','호텔','항공서비스','승무원','외식','조리','바리스타','메이크업','뷰티','여행','호텔리어','서비스'], keywords:['고객경험','서비스디자인','관광콘텐츠','지속가능관광','지역관광','외식산업','식품안전','문화다양성','항공서비스','디지털마케팅','예약플랫폼','친환경서비스','감정노동','브랜드경험','환대산업','무장애관광','로컬콘텐츠','위기관리','서비스품질','소비트렌드'], focus:['디지털 전환과 고객 경험','지속가능한 관광·외식·서비스','감정노동·접근성·서비스 윤리']},
+  {id:'food', label:'식품·영양·조리', terms:['식품','영양','조리','외식','제과','제빵'], keywords:['식품안전','영양관리','대체식품','푸드테크','지속가능식품','식품가공','식생활교육','맞춤형영양','급식관리','미생물관리','식품표시','로컬푸드','기능성식품','외식산업','음식물쓰레기','건강형평성','알레르기관리','스마트키친','소비자선택','식품정책'], focus:['푸드테크와 맞춤형 영양','식품안전과 건강한 식생활','지속가능한 생산·소비와 음식물쓰레기']},
+  {id:'mathscience', label:'수학·물리·지구과학', terms:['수학','통계','물리','지구과학','대기과학','기상','천문'], keywords:['수학적모델링','통계분석','양자기술','기후모델','데이터과학','확률','최적화','시뮬레이션','천체관측','과학계산','암호학','복잡계','예측모델','실험설계','수치해석','과학커뮤니케이션','불확실성','연구윤리','오픈데이터','융합과학'], focus:['AI·데이터 분석을 뒷받침하는 수학과 과학','기후·우주·양자 분야의 첨단 연구','불확실성·모델링·과학적 의사결정']},
+  {id:'animal', label:'동물·수의·반려동물', terms:['수의','동물','반려동물','사육','수산질병'], keywords:['동물복지','원헬스','인수공통감염병','반려동물헬스케어','동물행동','동물의약품','가축방역','야생동물보전','수의영상','동물윤리','스마트축산','동물유전','펫코노미','동물보건','감염병역학','동물영양','유기동물','환경보전','생명윤리','공중보건'], focus:['원헬스와 인수공통감염병','반려동물 복지와 책임 있는 돌봄','동물의료·행동·스마트축산']},
+  {id:'transport', label:'항공·해양·철도·물류', terms:['항공','조종사','관제','철도','선박','항해','해양','물류','유통'], keywords:['교통안전','스마트모빌리티','항공운항','철도시스템','해양물류','공급망','자율운항','친환경연료','교통데이터','물류자동화','재난대응','운송서비스','탄소배출','정비기술','인간공학','국제물류','드론배송','교통정책','인프라관리','위험관리'], focus:['자율화·데이터 기반 운송 시스템','교통안전과 인간공학','친환경 운송과 글로벌 물류']},
+  {id:'general', label:'일반 진로', terms:[], keywords:['인공지능','디지털전환','직업윤리','미래역량','문제해결','의사소통','협업','데이터활용','지속가능성','사회적책임','진로탐색','직무분석','기술변화','고용변화','평생학습','전문성','안전','접근성','산업동향','사회문제'], focus:['AI와 디지털 전환','사회적 가치와 직업윤리','미래 역량과 직업 변화']}
+];
+
+function inferItemType(name){
+  const n = norm(name);
+  if(/(학과|학부|전공|교육과|예과)$/.test(n)) return '학과';
+  if(MAJOR_NAMES.some(x=>norm(x)===n)) return '학과';
+  return '직업';
+}
+
+function getProfile(name){
+  const n = norm(name);
+  let best = PROFILE_RULES[PROFILE_RULES.length-1];
+  let bestScore = 0;
+  PROFILE_RULES.slice(0,-1).forEach(p=>{
+    let score = 0;
+    p.terms.forEach(term=>{
+      const t = norm(term);
+      if(n === t) score = Math.max(score, 100);
+      else if(n.includes(t)) score += Math.max(4, Math.min(20, t.length*3));
+    });
+    if(score > bestScore){ bestScore = score; best = p; }
+  });
+  return best;
+}
+
+function unique20(list){
+  const seen = new Set();
+  const out = [];
+  list.forEach(v=>{
+    const s = String(v||'').trim();
+    const k = norm(s);
+    if(s && !seen.has(k)){ seen.add(k); out.push(s); }
+  });
+  return out.slice(0,20);
+}
+
+function makeDynamicEntry(rawName, fromCatalog=true){
+  const name = String(rawName||'').trim();
+  const profile = getProfile(name);
+  const itemType = inferItemType(name);
+  const subject = itemType === '학과' ? '전공 교육과 진로' : '직무와 산업';
+  const action = itemType === '학과' ? '배우는 내용과 졸업 후 진로' : '실제 업무와 필요한 역량';
+  const topics = [
+    {title:`${name} 분야에서 ${profile.focus[0]}가 가져오는 변화`, summary:`${name}의 ${subject}에 기술 변화가 어떤 기회와 과제를 만드는지 조사`, context:`${profile.label} 관점에서 기술 활용 사례·장점·한계·윤리 문제를 비교하는 탐구 설계`},
+    {title:`${name}과 관련된 ${profile.focus[1]} 탐구`, summary:`${name}이 사회문제 해결에 기여할 수 있는 방법과 현실적인 한계를 분석`, context:`공공성·안전·환경·인권·접근성 가운데 관련성이 높은 기준을 정해 사례를 비교하는 탐구 설계`},
+    {title:`미래의 ${name}에게 필요한 역량: ${profile.focus[2]}`, summary:`${action}를 조사하고 앞으로 중요해질 지식·기술·태도를 정리`, context:`직무 정보, 대학 교육과정, 현장 인터뷰, 채용 공고 등을 활용할 수 있는 진로 탐구 설계`}
+  ];
+  const keywords = unique20([name, profile.label, ...profile.keywords, itemType==='학과'?'교육과정':'직무분석', itemType==='학과'?'진로연계':'직업전망']);
+  return {name, aliases:[], itemType, topics, keywords, source: fromCatalog ? '오프라인 탐구 설계' : '입력어 기반 자동 탐구 설계', generated:true};
+}
+
+const CATALOG_DATA = [
+  ...MAJOR_NAMES.map(name=>makeDynamicEntry(name,true)),
+  ...JOB_NAMES.map(name=>makeDynamicEntry(name,true))
+];
+
+function allData(){
+  const seen = new Set();
+  return [...CURATED_DATA, ...CATALOG_DATA].filter(item=>{
+    const key = norm(item.name);
+    if(!key || seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+
+/* ---------------- 검색/자동완성 로직 ---------------- */
+const fieldInput = document.getElementById('field-input');
+const suggestList = document.getElementById('suggest-list');
+const submitBtn = document.getElementById('submit-btn');
+const errorBox = document.getElementById('error-box');
+const results = document.getElementById('results');
+const topicsEl = document.getElementById('topics');
+const keywordsEl = document.getElementById('keywords');
+const stampRow = document.getElementById('stamp-row');
+const stampQuery = document.getElementById('stamp-query');
+const stampDate = document.getElementById('stamp-date');
+const chipRow = document.getElementById('chip-row');
+const dataCountHint = document.getElementById('data-count-hint');
+function updateDataCount(){
+  dataCountHint.textContent=`오프라인 즉시 검색 · 예시 목록 ${allData().length.toLocaleString()}개 · 목록 밖 입력도 자동 생성`;
+}
+updateDataCount();
+
+const QUICK_PICKS = ["컴퓨터공학과","간호학과","심리학과","생명과학과","경영학과","미디어커뮤니케이션학과","건축학과","환경공학과"];
+QUICK_PICKS.forEach(name=>{
+  const chip = document.createElement('span');
+  chip.className = 'chip';
+  chip.textContent = name;
+  chip.addEventListener('click', ()=>{ fieldInput.value = name; renderByName(name); });
+  chipRow.appendChild(chip);
+});
+
+function norm(s){ return (s||'').toLowerCase().replace(/\s/g,''); }
+
+function findExact(q){
+  const nq = norm(q);
+  return allData().find(d => norm(d.name) === nq || d.aliases.some(a=>norm(a)===nq));
+}
+
+function scoreMatch(q, d){
+  const nq = norm(q);
+  if(!nq) return -1;
+  const candidates = [d.name, ...d.aliases];
+  let best = -1;
+  candidates.forEach(c=>{
+    const nc = norm(c);
+    if(nc === nq) best = Math.max(best, 100);
+    else if(nc.startsWith(nq)) best = Math.max(best, 80);
+    else if(nc.includes(nq)) best = Math.max(best, 60);
+    else if(nq.includes(nc) && nc.length>=2) best = Math.max(best, 40);
+  });
+  return best;
+}
+
+function getMatches(q, limit){
+  return allData()
+    .map(d=>({d, score:scoreMatch(q,d)}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0, limit||6);
+}
+
+let highlightIdx = -1;
+function renderSuggestions(){
+  const q = fieldInput.value.trim();
+  suggestList.innerHTML = '';
+  highlightIdx = -1;
+  if(!q){ suggestList.classList.remove('active'); return; }
+  const matches = getMatches(q, 7);
+  if(matches.length === 0){
+    const li = document.createElement('li');
+    li.textContent = `“${q}”로 바로 탐구주제 만들기`;
+    const tag = document.createElement('span');
+    tag.className = 'match-tag';
+    tag.textContent = '자동 설계';
+    li.appendChild(tag);
+    li.addEventListener('click', ()=>{
+      suggestList.classList.remove('active');
+      renderResults(makeDynamicEntry(q,false));
+    });
+    suggestList.appendChild(li);
+    suggestList.classList.add('active');
+    return;
+  }
+  matches.forEach(({d})=>{
+    const li = document.createElement('li');
+    li.textContent = d.name;
+    const tag = document.createElement('span');
+    tag.className = 'match-tag';
+    tag.textContent = d.itemType || (d.source ? '공식' : '추천');
+    li.appendChild(tag);
+    li.addEventListener('click', ()=>{
+      fieldInput.value = d.name;
+      suggestList.classList.remove('active');
+      renderByName(d.name);
+    });
+    suggestList.appendChild(li);
+  });
+  suggestList.classList.add('active');
+}
+
+fieldInput.addEventListener('input', renderSuggestions);
+fieldInput.addEventListener('focus', renderSuggestions);
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.field')){ suggestList.classList.remove('active'); }
+});
+fieldInput.addEventListener('keydown', (e)=>{
+  const items = Array.from(suggestList.children);
+  if(e.key === 'ArrowDown' && items.length){
+    e.preventDefault();
+    highlightIdx = Math.min(highlightIdx+1, items.length-1);
+    items.forEach((li,i)=>li.classList.toggle('hl', i===highlightIdx));
+  }else if(e.key === 'ArrowUp' && items.length){
+    e.preventDefault();
+    highlightIdx = Math.max(highlightIdx-1, 0);
+    items.forEach((li,i)=>li.classList.toggle('hl', i===highlightIdx));
+  }else if(e.key === 'Enter'){
+    if(highlightIdx >= 0 && items[highlightIdx]){
+      items[highlightIdx].click();
+    }else{
+      submitBtn.click();
+    }
+  }
+});
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function renderResults(entry){
+  topicsEl.innerHTML = '';
+  keywordsEl.innerHTML = '';
+
+  entry.topics.forEach((t,i)=>{
+    const div = document.createElement('div');
+    div.className = 'case-file';
+    div.style.animationDelay = (i*0.08)+'s';
+    div.innerHTML = `
+      <div class="tag">CASE FILE NO. ${String(i+1).padStart(2,'0')}</div>
+      <h3>${escapeHtml(t.title)}</h3>
+      <p>${escapeHtml(t.summary)}</p>
+      <div class="source">배경 &middot; ${escapeHtml(t.context)}${entry.source ? ` <span class="source-badge">${escapeHtml(entry.source)}</span>` : ''}${entry.sourceUrl ? ` · <a class="official-link" href="${escapeHtml(entry.sourceUrl)}" target="_blank" rel="noopener noreferrer">공식 정보 확인</a>` : ''}</div>
+    `;
+    topicsEl.appendChild(div);
+    requestAnimationFrame(()=> div.classList.add('show'));
+  });
+
+  entry.keywords.slice(0,20).forEach((kw,i)=>{
+    const div = document.createElement('div');
+    div.className = 'kw';
+    div.innerHTML = `
+      <span class="idx">${String(i+1).padStart(2,'0')}</span>
+      <span class="word">${escapeHtml(kw)}</span>
+      <span class="copied">복사됨</span>
+    `;
+    div.addEventListener('click', ()=>{
+      navigator.clipboard?.writeText(kw).catch(()=>{});
+      div.classList.add('copied-flash');
+      setTimeout(()=>div.classList.remove('copied-flash'), 900);
+    });
+    keywordsEl.appendChild(div);
+  });
+
+  stampQuery.textContent = entry.name;
+  const now = new Date();
+  stampDate.textContent = `조사일 · ${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+
+  errorBox.classList.remove('active');
+  results.classList.add('active');
+  stampRow.classList.remove('show');
+  requestAnimationFrame(()=> stampRow.classList.add('show'));
+  results.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderByName(name){
+  const entry = findExact(name) || getMatches(name,1).map(x=>x.d)[0] || makeDynamicEntry(name,false);
+  renderResults(entry);
+}
+
+
+
+submitBtn.addEventListener('click', ()=>{
+  const q = fieldInput.value.trim();
+  errorBox.classList.remove('active');
+  errorBox.innerHTML = '';
+
+  if(!q){
+    errorBox.textContent = '관심 학과 또는 직업을 입력해주세요.';
+    errorBox.classList.add('active');
+    fieldInput.focus();
+    return;
+  }
+
+  const exact = findExact(q);
+  if(exact){ renderResults(exact); return; }
+
+  const matches = getMatches(q, 4);
+  if(matches.length && matches[0].score >= 60){
+    renderResults(matches[0].d);
+    if(norm(matches[0].d.name) !== norm(q)){
+      errorBox.innerHTML = `입력한 “${escapeHtml(q)}”와 가장 가까운 <b>${escapeHtml(matches[0].d.name)}</b> 자료를 먼저 보여드립니다. 입력어 그대로 생성하려면 아래 버튼을 누르세요.`;
+      const tryRow = document.createElement('div');
+      tryRow.className = 'try-chips';
+      const direct = document.createElement('span');
+      direct.textContent = `“${q}” 그대로 생성`;
+      direct.addEventListener('click', ()=>{ renderResults(makeDynamicEntry(q,false)); errorBox.classList.remove('active'); });
+      tryRow.appendChild(direct);
+      matches.slice(1).forEach(({d})=>{
+        const span = document.createElement('span');
+        span.textContent = d.name;
+        span.addEventListener('click', ()=>{ fieldInput.value=d.name; renderResults(d); errorBox.classList.remove('active'); });
+        tryRow.appendChild(span);
+      });
+      errorBox.appendChild(tryRow);
+      errorBox.classList.add('active');
+    }
+    return;
+  }
+
+  renderResults(makeDynamicEntry(q,false));
+});
+</script>
+</body>
+</html>
